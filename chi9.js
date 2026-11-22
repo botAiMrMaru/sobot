@@ -278,9 +278,9 @@
         <p class="lead">The Android home-screen widget, when the app is installed, shows the last delayed Nifty print seen after unlock.</p>`)}`;
   }
 
-  function tools(D, u, sub) {
+  function tools(D, u, sub, opts) {
     const tab = sub || 'desk';
-    const segs = u.segHtml('tools', [['desk', 'Desk'], ['funds', 'Funds'], ['crypto', 'Crypto'], ['social', 'Buzz'], ['theme', 'Theme']]);
+    const segs = (opts && opts.noSeg) ? '' : u.segHtml('tools', [['desk', 'Desk'], ['funds', 'Funds'], ['crypto', 'Crypto'], ['social', 'Buzz'], ['theme', 'Theme']]);
     const body = tab === 'funds' ? funds(D, u)
       : tab === 'crypto' ? crypto(D, u)
       : tab === 'social' ? social(D, u)

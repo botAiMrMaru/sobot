@@ -4,7 +4,7 @@
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const TCFG = window.SOBOT_CFG || {}; const IDLE_MS = TCFG.idleMsTest || 10 * 60 * 1000, POLL_MS = TCFG.pollMsTest || 75 * 1000;
   let D = null, section = 'home', pollT = null, unsub = null, lastAct = Date.now();
-  const sub = { pulse: 'overview', world: 'intel', sports: 'home', tools: 'desk', play: 'games', fno: 'NIFTY', mov: 'NIFTY', std: 'nba', feed: 'all', news: 'all', wnews: 'all' };
+  const sub = { pulse: 'overview', world: 'wnews', sports: 'home', tools: 'desk', play: 'games', fno: 'NIFTY', mov: 'NIFTY', std: 'nba', feed: 'all', news: 'all', wnews: 'all' };
   const prevScore = {};
   const NATIVE = window.SobotNative || null;
   const H = (k = 'light') => { try { if (NATIVE && NATIVE.haptic) return NATIVE.haptic(k); if (navigator.vibrate) navigator.vibrate({ light: 6, medium: 12, heavy: 22, success: [8, 30, 10], error: [24, 40, 24] }[k] || 6); } catch (e) {} };
@@ -30,7 +30,23 @@
   const css = (o) => esc(Object.entries(o).map(([k, v]) => k + ':' + v).join('|'));
   const applyCss = (root) => $$('[data-css]', root).forEach(el => { el.dataset.css.split('|').forEach(p => { const i = p.indexOf(':'); if (i > 0) el.style.setProperty(p.slice(0, i), p.slice(i + 1)); }); el.removeAttribute('data-css'); });
   const ext = (href, inner, c = '') => href ? `<a class="${c}" href="${esc(href)}" target="_blank" rel="noopener noreferrer nofollow">${inner}</a>` : `<div class="${c}">${inner}</div>`;
-  const empty = (t) => `<div class="empty">${esc(t)}</div>`;
+  const decodeEnt = (s) => String(s == null ? '' : s).replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&#x([0-9a-fA-F]+);/g,(_,h)=>String.fromCharCode(parseInt(h,16))).replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(+n));
+  const asofLabel = (raw) => {
+    if (!raw) return '';
+    const t0 = Date.parse(String(raw).replace(' IST', '+05:30').replace(/(\d{4})-(\d{2})-(\d{2})$/, '$1-$2-$3T00:00:00+05:30'));
+    if (!isFinite(t0)) return String(raw);
+    const age = Date.now() - t0;
+    const pretty = String(raw);
+    if (age > 60 * 86400000) return pretty + ' · too old, hidden';
+    if (age > 7 * 86400000) return pretty + ' · delayed / stale';
+    return pretty;
+  };
+  const isStale = (raw, days) => {
+    const t0 = Date.parse(String(raw || '').replace(' IST', '+05:30').replace(/(\d{4})-(\d{2})-(\d{2})$/, '$1-$2-$3T00:00:00+05:30'));
+    return isFinite(t0) && (Date.now() - t0) > (days || 60) * 86400000;
+  };
+  const empty = (t) => `<div class="empty"><i class="skel skel-line"></i><i class="skel skel-line short"></i><p>${esc(t)}</p></div>`;
+
   const head = (t, s = '') => `<div class="h"><h2>${esc(t)}</h2><small>${s}</small></div>`;
   const P = (inner, c = '') => `<div class="p ${c}">${inner}</div>`;
   const src = (t) => `<span class="src">${esc(t)}</span>`;
@@ -45,7 +61,7 @@
   const segHtml = (key, items, small) => `<div class="seg ${small ? 's2' : ''}" data-seg="${key}"><i class="seg-pill"></i>${items.map(([k, t, b]) => `<button data-sub="${k}" class="${sub[key] === k ? 'on' : ''}">${esc(t)}${b ? `<span class="badge">${b}</span>` : ''}</button>`).join('')}</div>`;
 
   /* ── derived ── */
-  const XU = () => ({esc, nf, pct, cls, px, P, head, src, spark, T, ext, empty, ago, tag, inrS, sInrS, segHtml, playTab: sub.play});
+  const XU = () => ({esc, nf, pct, cls, px, P, head, src, spark, T, ext, empty, ago, tag, inrS, sInrS, segHtml, playTab: sub.play, asofLabel, isStale, decodeEnt});
   const fx = () => (D && D.fx && D.fx.usdinr) || 84.5;
   const W = () => (D && D.world && !D.world.error) ? D.world : null;
   function quote(sym) { const w = W(); if (!w) return null; for (const g of Object.values(w.quotes || {})) for (const q of g) if (q.s === sym) return q; return null; }
@@ -96,7 +112,7 @@
   }
   const alertList = (al) => al.map(a => ext(a.href, `<i class="dot ${a.lvl}"></i><div class="t"><b>${esc(a.t)}</b><span>${esc(a.s || '')}</span></div>`, 'li' + (a.jump ? '" data-jump="' + a.jump : ''))).join('') || empty('All quiet');
 
-  const chiHome = () => (window.Chi ? (Chi.brief(D, XU()) + Chi.meter(D, XU())) : '') + (window.Teach && window.SOBOT_CFG ? Teach.paywall(window.SOBOT_CFG, XU()) : '');
+  const chiHome = () => (window.Chi ? (Chi.brief(D, XU()) + Chi.meter(D, XU())) : '');
   V.home = () => {
     const nq = quote('^NSEI') || quote('NIFTY') || {};
     const M = D.markets || {}, ses = M.session || {}, rc = M.recap || {};
@@ -138,7 +154,8 @@
       ${head('Live sport', liveGames.length ? liveGames.length + ' now' : '—')}
       ${P(liveGames.map(game).join('') || empty('Nothing live right now. Open Sports for the full board.'))}
       ${src('Public feed ' + (D.ist || '') + ' · World Monitor, NSE, ESPN, Binance')}
-    </div></div>`;
+    </div></div>
+    ${(window.Teach && window.SOBOT_CFG) ? Teach.paywall(window.SOBOT_CFG, XU()) : ''}`;
   };
   V.home.after = (root) => {
     const q = quote('^NSEI'); const sp = (q && q.sp) || [];
@@ -152,8 +169,12 @@
   P_.screener = () => window.Chi9 ? Chi9.screener(D, XU()) : P(empty('Screener unavailable.'));
   P_.ipo = () => window.Chi9 ? Chi9.ipo(D, XU()) : P(empty('IPO centre unavailable.'));
   P_.deals = () => window.Chi9 ? Chi9.deals(D, XU()) : P(empty('Deals unavailable.'));
-  V.pulse = () => segHtml('pulse', [['overview', 'Overview'], ['fno', 'F&O'], ['flows', 'Flows'], ['breakouts', 'Breakouts'], ['screener', 'Screener'], ['ipo', 'IPO'], ['deals', 'Deals'], ['crypto', 'Crypto'], ['commodities', 'Commodities'], ['insight', 'Sentiment'], ['news', 'News']]) + (P_[sub.pulse] || P_.overview)();
-  V.tools = () => window.Chi9 ? Chi9.tools(D, XU(), sub.tools) : P(empty('Tools unavailable.'));
+  V.pulse = () => segHtml('pulse', [['overview', 'Overview'], ['fno', 'F&O'], ['flows', 'Flows'], ['breakouts', 'Breakouts'], ['screener', 'Screener'], ['ipo', 'IPO'], ['deals', 'Deals'], ['crypto', 'Crypto'], ['commodities', 'Commodities'], ['insight', 'Sentiment'], ['news', 'News'], ['funds', 'Funds'], ['desk', 'Portfolio'], ['social', 'Buzz'], ['theme', 'Theme']]) + (P_[sub.pulse] || P_.overview)();
+  V.tools = () => window.Chi9 ? Chi9.tools(D, XU(), sub.tools, {noSeg:true}) : P(empty('Tools unavailable.'));
+  P_.funds = () => window.Chi9 ? Chi9.tools(D, XU(), 'funds', {noSeg:true}) : P(empty('Funds unavailable.'));
+  P_.desk = () => window.Chi9 ? Chi9.tools(D, XU(), 'desk', {noSeg:true}) : P(empty('Portfolio unavailable.'));
+  P_.social = () => window.Chi9 ? Chi9.tools(D, XU(), 'social', {noSeg:true}) : P(empty('Buzz unavailable.'));
+  P_.theme = () => window.Chi9 ? Chi9.tools(D, XU(), 'theme', {noSeg:true}) : P(empty('Theme unavailable.'));
 
   P_.overview = () => {
     const M = D.markets || {}, w = W(); const ses = M.session || {}; const rc = M.recap || {};
@@ -423,7 +444,7 @@
     if (window.Chi && Chi.afterLive) Chi.afterLive(main);
     if (window.Play && Play.sleep && section !== 'play') Play.sleep();
   }
-  function go(s, sb) { if (sb) { if (s === 'pulse') sub.pulse = sb; if (s === 'world') sub.world = sb; if (s === 'tools') sub.tools = sb; if (s === 'play') sub.play = sb; if (s === 'sports') { sub.sports = sb; if (Live.LABEL[sb]) Live.watch(sb); } }
+  function go(s, sb) { if (s === 'tools') { s = 'pulse'; sb = sb || sub.tools || 'desk'; } if (sb) { if (s === 'pulse') sub.pulse = sb; if (s === 'world') sub.world = sb; if (s === 'tools') sub.tools = sb; if (s === 'play') sub.play = sb; if (s === 'sports') { sub.sports = sb; if (Live.LABEL[sb]) Live.watch(sb); } }
     if (section !== s || sb) { section = s; H('light'); scrollTo({ top: 0 }); render(); } }
   function placeDock() { const btns = $$('#dock button'); const i = btns.findIndex(b => b.dataset.go === section); btns.forEach((b, j) => b.classList.toggle('on', j === i)); const b = btns[i], pill = $('#pill'); if (!b) return;
     if (matchMedia('(min-width:1000px)').matches) { pill.style.removeProperty('width'); pill.style.setProperty('transform', `translateY(${b.offsetTop}px)`); }

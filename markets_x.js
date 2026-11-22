@@ -29,8 +29,8 @@
     const newsH = news.length ? news.map(n => `<div class="news-row">${u.ext(n.link, `<div class="nm">${u.esc(n.title)}</div><div class="meta">${u.esc(n.source || '')} · ${u.ago(n.ts)}</div>`, 'nr')}${n.tilt ? `<span class="tag ${dirCls(n.tilt)}">${n.tilt > 0 ? 'firmer tone' : 'softer tone'}</span>` : ''}</div>`).join('') : u.empty('No recent commodity headlines in the desk news feed.');
     return `
       ${u.P(`<p class="lead">Delayed metals, energy and agri benchmarks, plus Indian mandi staples. Outlook is a plain rule (trend + season + headlines), not a tip. This is a data and news dashboard, not SEBI-regulated advice.</p>`)}
-      ${mandiRows.length ? u.head('Mandi staples', C.mandi_asof ? ('modal ₹/quintal · as of ' + C.mandi_asof) : 'modal ₹/quintal') : ''}
-      ${mandiRows.length ? u.P(u.T(['Commodity', ['Modal', 'r'], ['Range', 'r'], ['Near', 'r'], ['Trend', 'r'], ''], mandiRows, 'No mandi prints in the delayed feed yet')) : ''}
+      ${mandiRows.length && !(u.isStale && u.isStale(C.mandi_asof, 90)) ? u.head('Mandi staples', C.mandi_asof ? ('modal ₹/quintal · ' + (u.asofLabel ? u.asofLabel(C.mandi_asof) : ('as of ' + C.mandi_asof))) : 'modal ₹/quintal') : ''}
+      ${mandiRows.length && !(u.isStale && u.isStale(C.mandi_asof, 90)) ? u.P(u.T(['Commodity', ['Modal', 'r'], ['Range', 'r'], ['Near', 'r'], ['Trend', 'r'], ''], mandiRows, 'No mandi prints in the delayed feed yet')) : ''}
       ${mandiRows.length ? u.src('Agmarknet-style daily prints via a keyless 5-state feed (Maharashtra, Uttar Pradesh, Punjab, Madhya Pradesh, Karnataka). Often delayed.') : ''}
       ${missNote ? u.P(`<p class="lead">${missNote}</p>`) : ''}
       ${futBlock ? u.head('Exchange futures', 'delayed global benchmarks · not live MCX') + u.P(futBlock) + u.src('Yahoo Finance delayed futures (COMEX, NYMEX, CBOT, ICE). Indian MCX/NCDEX live prices were not reachable without a key-gated API.') : u.P(`<p class="lead">Global delayed futures were not reachable in this pull. This is not a live MCX tape.</p>`)}

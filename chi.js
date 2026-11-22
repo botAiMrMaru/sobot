@@ -240,10 +240,10 @@
     if (pcr >= 1.2) { label = 'Bullish tilt (high PCR)'; cls = 'up'; n = 70; }
     else if (pcr <= 0.8) { label = 'Bearish tilt (low PCR)'; cls = 'dn'; n = 30; }
     return u.P(`<div class="h"><h2>Options pulse</h2><small>Nifty · ${u.esc(oi.expiry || '')}</small></div>
-      <div class="kpis"><div class="kpi"><div class="lbl">PCR OI</div><div class="v ${cls}">${pcr == null ? '—' : Number(pcr).toFixed(2)}</div></div>
+      <div class="kpis k4"><div class="kpi"><div class="lbl">PCR OI</div><div class="v ${cls}">${pcr == null ? '—' : Number(pcr).toFixed(2)}</div></div>
       <div class="kpi"><div class="lbl">Max pain</div><div class="v gold">${u.nf(pain)}</div></div>
       <div class="kpi"><div class="lbl">ATM</div><div class="v">${u.nf(atm)}</div></div>
-      <div class="kpi"><div class="lbl">Meter</div><div class="v ${cls}">${u.esc(label)}</div></div></div>
+      <div class="kpi"><div class="lbl">Meter</div><div class="v ${cls} wrap">${u.esc(label.replace(' (high PCR)','').replace(' (low PCR)',''))}<small class="fl">${pcr >= 1.2 ? 'high PCR' : pcr <= 0.8 ? 'low PCR' : 'balanced'}</small></div></div></div>
       <span class="bar ${cls}"><i style="width:${n}%"></i></span>
       <span class="src">NSE option chain via the desk. A simple PCR reading, not a trading tip.</span>`);
   }
