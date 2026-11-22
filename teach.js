@@ -47,9 +47,11 @@
   function paywall(cfg, u) {
     const p = (cfg && cfg.premium) || {};
     if (p.enabled) return u.P(`<p class="lead">Premium is on. ${u.esc(p.plan || '')}</p>`);
+    const plan = p.plan || '₹499 / month';
+    const alt = p.alt || '$333 / 3 months';
     return u.P(`<div class="once"><b>Premium — ready, not active</b>
-      <p class="hint">Plan: $333 / 3 months. No Razorpay or Stripe account is connected yet, so nothing is charged and nothing is locked. Sobot stays a data and news dashboard.</p>
-      <p class="hint">To turn it on later: create a Razorpay or Stripe account, put the publishable key in site config, set premium.enabled to true, and add a webhook the box can verify. Then rebuild the Android app.</p></div>`);
+      <p class="hint">Cheaper plan: ${u.esc(plan)}. Alternative: ${u.esc(alt)}. Ads will appear on the free tier only, once a payments account exists. Nothing is charged and nothing is locked yet. Sobot stays a data and news dashboard.</p>
+      <p class="hint">To turn it on later: create a Razorpay or Stripe account, put the publishable key in site config, set premium.enabled to true (and ads.enabled if you want the free-tier ad slot), and add a webhook the box can verify. Then rebuild the Android app.</p></div>`);
   }
 
   window.Teach = Object.freeze({ open, close, paywall });

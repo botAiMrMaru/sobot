@@ -10,7 +10,17 @@
   --sans:Geist,-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;
   --mono:GeistMono,ui-monospace,SFMono-Regular,Menlo,monospace;
   --r:10px;--ease:cubic-bezier(.22,.8,.24,1);
-  --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px)
+  --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
+  --dockbg:rgba(11,11,12,.92);--topbg:rgba(9,9,10,.86)
+}
+html[data-theme=light]{
+  color-scheme:light;
+  --bg:#f4f2ed;--s0:#faf8f4;--s1:#ffffff;--s2:#f0eee8;--s3:#e7e3da;
+  --line:rgba(20,18,14,.08);--line2:rgba(20,18,14,.14);
+  --tx:#1a1916;--tx2:#4a4843;--mu:#6f6c65;--dim:#8a8680;
+  --gold:#8a6d32;--gold2:#6e5420;--goldd:rgba(138,109,50,.12);--goldl:rgba(138,109,50,.35);
+  --up:#1f7a4d;--dn:#b44540;--upd:rgba(31,122,77,.12);--dnd:rgba(180,69,64,.12);--amb:#9a6f1c;
+  --dockbg:rgba(250,248,244,.94);--topbg:rgba(244,242,237,.9)
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{background:var(--bg);color-scheme:dark;-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -56,7 +66,7 @@ input{font:inherit;color:inherit}
 /* ── shell ── */
 .app{min-height:100vh;padding-bottom:calc(74px + var(--safe-b))}
 .app.reveal{animation:fadein .6s var(--ease) backwards}
-.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;height:calc(48px + var(--safe-t));padding:var(--safe-t) 16px 0;background:rgba(9,9,10,.86);-webkit-backdrop-filter:saturate(1.2) blur(14px);backdrop-filter:saturate(1.2) blur(14px);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;height:calc(48px + var(--safe-t));padding:var(--safe-t) 16px 0;background:var(--topbg);-webkit-backdrop-filter:saturate(1.2) blur(14px);backdrop-filter:saturate(1.2) blur(14px);border-bottom:1px solid var(--line)}
 .mark{font:500 12px/1 var(--sans);letter-spacing:.5em;color:var(--tx)}
 .mark i{display:inline-block;width:5px;height:5px;margin:0 0 2px 2px;background:var(--gold);transform:rotate(45deg)}
 .clock{margin-left:auto;font:400 11px/1 var(--mono);color:var(--mu)}
@@ -77,8 +87,8 @@ input{font:inherit;color:inherit}
 .view{animation:fadein .28s var(--ease) backwards}
 
 /* ── dock ── */
-.dock{position:fixed;z-index:30;left:0;right:0;bottom:0;display:flex;height:calc(60px + var(--safe-b));padding:0 6px var(--safe-b);background:rgba(11,11,12,.92);-webkit-backdrop-filter:saturate(1.2) blur(16px);backdrop-filter:saturate(1.2) blur(16px);border-top:1px solid var(--line)}
-.dock button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--dim);font:500 9.5px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;transition:color .2s}
+.dock{position:fixed;z-index:30;left:0;right:0;bottom:0;display:flex;height:calc(60px + var(--safe-b));padding:0 6px var(--safe-b);background:var(--dockbg);-webkit-backdrop-filter:saturate(1.2) blur(16px);backdrop-filter:saturate(1.2) blur(16px);border-top:1px solid var(--line)}
+.dock button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--dim);font:500 8.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;transition:color .2s;min-width:0}
 .dock svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
 .dock button.on{color:var(--tx)}
 .dock-pill{position:absolute;top:-1px;left:0;height:1px;background:var(--gold);transition:transform .35s var(--ease),width .35s var(--ease)}
@@ -361,3 +371,13 @@ code{font:400 11px var(--mono);color:var(--gold2)}
 .tutor-card .issue{display:flex;gap:12px;align-items:stretch;margin-top:4px}
 .tutor-card .act{flex:1;height:42px}
 .tutor-card #tutor-skip{border-color:var(--line);color:var(--tx2)}
+
+.linkish{background:none;border:0;color:var(--gold);font:500 10px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;padding:0 0 0 6px;cursor:pointer}
+.issue.wrap{flex-wrap:wrap}
+.issue.wrap input,.issue.wrap select,.issue.wrap label{flex:1 1 120px;min-width:0}
+.issue.wrap label{display:flex;flex-direction:column;gap:4px;font:500 10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.issue.wrap label input,.issue.wrap label select{font:400 13px/1.3 var(--mono);color:var(--tx);background:transparent;border:0;border-bottom:1px solid var(--line2);padding:8px 2px}
+.ads-slot{display:none;margin:12px 0;padding:16px;border:1px dashed var(--line2);border-radius:var(--r);color:var(--dim);text-align:center;letter-spacing:.12em;text-transform:uppercase;font:500 10px/1 var(--sans)}
+.ads-slot.on{display:block}
+html[data-theme=light] .dock,html[data-theme=light] .top{color:var(--tx)}
+.act.on{border-color:var(--goldl);color:var(--gold2);background:var(--goldd)}
