@@ -289,6 +289,7 @@
 
   /* ── world (merged from the World Monitor / WWAi command center) ── */
   V.play = () => window.Play ? Play.render(D, XU()) : P(empty('Play is unavailable.'));
+  V.play.after = (root) => { if (window.Play && Play.after) Play.after(root, toast); };
   const W_ = {};
   V.world = () => {
     const w = W(); const segs = segHtml('world', [['intel', 'Brief'], ['wnews', 'News'], ['war', 'War'], ['tv', 'Live'], ['monitor', 'Monitor'], ['feed', 'Events'], ['global', 'Global'], ['calendar', 'Calendar'], ['weather', 'Weather']]);
@@ -420,6 +421,7 @@
     if (section === 'pulse' && sub.pulse === 'crypto') Live.pullFutures();
     if (window.Chi9) { Chi9.nudgeWidget(D); Chi9.checkWatch(D, toast); Chi9.settlePredict(D); }
     if (window.Chi && Chi.afterLive) Chi.afterLive(main);
+    if (window.Play && Play.sleep && section !== 'play') Play.sleep();
   }
   function go(s, sb) { if (sb) { if (s === 'pulse') sub.pulse = sb; if (s === 'world') sub.world = sb; if (s === 'tools') sub.tools = sb; if (s === 'play') sub.play = sb; if (s === 'sports') { sub.sports = sb; if (Live.LABEL[sb]) Live.watch(sb); } }
     if (section !== s || sb) { section = s; H('light'); scrollTo({ top: 0 }); render(); } }
@@ -514,7 +516,7 @@
     const c9 = e.target.closest('[data-chi9]');
     if (c9 && window.Chi9) { e.preventDefault(); Chi9.handle(c9.dataset.chi9, D, toast, render); return; }
     const pact = e.target.closest('[data-play]');
-    if (pact && window.Play) { e.preventDefault(); Play.handle(pact.dataset.play, D, toast); render({keepScroll:true,quiet:true}); return; }
+    if (pact && window.Play) { e.preventDefault(); const pr = Play.handle(pact.dataset.play, D, toast); if (pr !== 'keep') render({keepScroll:true,quiet:true}); return; }
     const s = e.target.closest('[data-sub]'); if (s) { const key = s.closest('[data-seg]').dataset.seg; if (sub[key] !== s.dataset.sub) { sub[key] = s.dataset.sub; H('light');
       if (key === 'sports') { if (Live.LABEL[s.dataset.sub]) Live.watch(s.dataset.sub); else Live.unwatch(); } render({ keepScroll: !['sports', 'pulse', 'world', 'tools', 'play'].includes(key) }); } return; }
     const j = e.target.closest('[data-jump]'); if (j) { e.preventDefault(); const [a, b] = j.dataset.jump.split(':'); go(a, b); return; }
