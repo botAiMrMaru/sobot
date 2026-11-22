@@ -1,5 +1,5 @@
 /* App-shell cache only. The sealed feed is never cached. */
-const V = 'sobot-v12';
+const V = 'sobot-v13';
 const SHELL = ['./', 'index.html', 'sobot.css', 'config.js', 'feed.js', 'markets_x.js', 'world.js', 'live.js', 'chi.js', 'play.js', 'teach.js', 'tutorial-video.js', 'tutorial-video.css', 'chi9.js', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'fonts/geist.woff2', 'fonts/geistmono.woff2'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

@@ -58,5 +58,10 @@
       <p class="hint">To turn it on later: create a Razorpay or Stripe account, put the publishable key in site config, set premium.enabled to true (and ads.enabled if you want the free-tier ad slot), and add a webhook the box can verify. Then rebuild the Android app.</p></div>`);
   }
 
-  window.Teach = Object.freeze({ open, close, paywall });
+  
+  function hideBehind(on) {
+    document.body.classList.toggle('tutor-behind', !!on);
+  }
+
+  window.Teach = Object.freeze({ open, close, paywall, hideBehind, openCards });
 })();
