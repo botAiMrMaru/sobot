@@ -1,0 +1,15 @@
+/* Sobot video tutorial overlay. Graphite + champagne. Isolated from the main sheet. */
+.tutvid{position:fixed;inset:0;z-index:120;display:none;background:#09090a;flex-direction:column;align-items:center;justify-content:center}
+.tutvid.on{display:flex}
+.tutvid video{width:100%;height:100%;object-fit:contain;background:#09090a;max-height:100%;max-width:100%}
+.tutvid-bar{position:absolute;top:0;left:0;right:0;padding:calc(10px + var(--safe-t,0px)) 14px 16px;display:flex;justify-content:flex-end;pointer-events:none;background:linear-gradient(to bottom,rgba(9,9,10,.72),rgba(9,9,10,0))}
+.tutvid-skip{pointer-events:auto;min-width:108px;height:36px;padding:0 14px;border:1px solid rgba(205,178,124,.35);border-radius:8px;background:rgba(9,9,10,.72);color:#e6d3a8;font:500 12px/1 Geist,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.tutvid-skip:disabled{opacity:.7;color:#b4b4bb;border-color:rgba(255,255,255,.14);cursor:not-allowed}
+.tutvid-skip:not(:disabled):hover{background:rgba(205,178,124,.14);border-color:#cdb27c}
+.tutvid-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:50%;border:1px solid rgba(205,178,124,.5);background:rgba(9,9,10,.6);color:#e6d3a8}
+.tutvid-play::before{content:"";display:block;width:0;height:0;border-style:solid;border-width:12px 0 12px 20px;border-color:transparent transparent transparent #e6d3a8;margin-left:26px}
+.tutmenu{position:fixed;z-index:90;top:calc(var(--safe-t,0px) + 48px);left:12px;min-width:200px;background:#111113;border:1px solid rgba(205,178,124,.35);border-radius:10px;padding:6px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+.tutmenu button{display:block;width:100%;text-align:left;height:42px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:#ececee;font:500 13px/1 Geist,system-ui,sans-serif}
+.tutmenu button:hover{background:rgba(205,178,124,.14);color:#e6d3a8}
+.tut-replay{margin:10px 0 0}
+.tut-replay .act{width:100%}

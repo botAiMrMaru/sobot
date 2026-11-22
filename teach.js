@@ -21,11 +21,15 @@
   };
   let i = 0, on = false;
   function lang() { return (window.Chi && Chi.lang) || 'en'; }
-  function open(force) {
+  function openCards(force) {
     if (!force) {
       try { if (localStorage.getItem('sobot-taught') === '1') return; } catch (e) {}
     }
     on = true; i = 0; draw();
+  }
+  function open(force) {
+    if (window.TutorialVideo) return TutorialVideo.open(!!force, () => openCards(true));
+    openCards(force);
   }
   function draw() {
     const steps = STEPS[lang()] || STEPS.en;
