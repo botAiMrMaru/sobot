@@ -151,7 +151,17 @@
     const syms = Object.keys(px);
     const opts = syms.map(s => `<option value="${u.esc(s)}">${u.esc(s)}</option>`).join('');
     const board = BOARD.map((s, i) => `<span class="sq ${i === st.board ? 'on' : ''}">${u.esc(s)}</span>`).join('');
+    const tab = (u.playTab || 'games');
+    const extra = (tab !== 'games' && window.Chi9 && Chi9.playPanel) ? Chi9.playPanel(tab, D, u) : '';
+    const segs = (window.Chi9 && Chi9.playSeg) ? Chi9.playSeg(u) : '';
+    if (tab !== 'games') {
+      return `<div class="play">${segs}<p class="fun">${FUN}</p>
+      ${u.P(`<div class="kpis"><div class="kpi"><div class="lbl">Sobo Coins</div><div class="v gold">${u.nf(st.coins, 0)}</div></div>
+        <div class="kpi"><div class="lbl">Streaks / clubs</div><div class="v">Play money only</div></div></div>`)}
+      ${extra}${u.src(FUN)}</div>`;
+    }
     return `<div class="play">
+      ${segs}
       <p class="fun">${FUN}</p>
       ${u.P(`<div class="kpis"><div class="kpi"><div class="lbl">Sobo Coins</div><div class="v gold">${u.nf(st.coins, 0)}</div></div>
         <div class="kpi"><div class="lbl">Paper book</div><div class="v">${u.inrS(eq)}</div></div>
@@ -211,5 +221,10 @@
   }
   function lock() { id = null; st = null; }
 
-  window.Play = Object.freeze({ boot, render, handle, lock, label: FUN });
+    function grant(n) { if (!st) return; st.coins += n; save(); }
+  function sid() { return id; }
+  function state() { return st; }
+
+  window.Play = { boot, render, handle, lock, label: FUN, grant, sid, state };
+
 })();
