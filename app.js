@@ -45,6 +45,7 @@
   const segHtml = (key, items, small) => `<div class="seg ${small ? 's2' : ''}" data-seg="${key}"><i class="seg-pill"></i>${items.map(([k, t, b]) => `<button data-sub="${k}" class="${sub[key] === k ? 'on' : ''}">${esc(t)}${b ? `<span class="badge">${b}</span>` : ''}</button>`).join('')}</div>`;
 
   /* ── derived ── */
+  const XU = () => ({esc, nf, pct, cls, px, P, head, src, spark, T, ext, empty, ago, tag, inrS, sInrS});
   const fx = () => (D && D.fx && D.fx.usdinr) || 84.5;
   const W = () => (D && D.world && !D.world.error) ? D.world : null;
   function quote(sym) { const w = W(); if (!w) return null; for (const g of Object.values(w.quotes || {})) for (const q of g) if (q.s === sym) return q; return null; }
@@ -95,6 +96,7 @@
   }
   const alertList = (al) => al.map(a => ext(a.href, `<i class="dot ${a.lvl}"></i><div class="t"><b>${esc(a.t)}</b><span>${esc(a.s || '')}</span></div>`, 'li' + (a.jump ? '" data-jump="' + a.jump : ''))).join('') || empty('All quiet');
 
+  const chiHome = () => (window.Chi ? (Chi.brief(D, XU()) + Chi.meter(D, XU())) : '') + (window.Teach && window.SOBOT_CFG ? Teach.paywall(window.SOBOT_CFG, XU()) : '');
   V.home = () => {
     const nq = quote('^NSEI') || quote('NIFTY') || {};
     const M = D.markets || {}, ses = M.session || {}, rc = M.recap || {};
@@ -112,7 +114,7 @@
     const al = alerts();
     const liveGames = [].concat(...['cricket', 'nfl', 'nba', 'soccer', 'nhl'].map(k => ((sportData(k) || {}).games || []).filter(g => g.state === 'in'))).slice(0, 5);
     const kp = (l, v, c = '') => `<div><div class="lbl">${l}</div><div class="v ${c}">${v}</div></div>`;
-    return `<div class="cols c3"><div>
+    return `${chiHome()}` + `<div class="cols c3"><div>
       <section class="p hero" id="hero">
         <div class="row1"><div><div class="lbl">${esc(rc.headline ? 'Session' : 'Nifty 50')}</div><div class="big ${cls(chg)}">${nf(last, 2)}</div></div>${tag(ses.open ? 'Open' : 'Closed', ses.open ? 'u' : '')}</div>
         <div class="sub"><span>Nifty <b class="${cls(chg)}">${pct(chg)}</b></span><span>${esc(rc.headline || rc.summary || 'Live markets')}</span></div>
@@ -281,9 +283,12 @@
   };
 
   /* ── world (merged from the World Monitor / WWAi command center) ── */
+  V.play = () => window.Play ? Play.render(D, XU()) : P(empty('Play is unavailable.'));
   const W_ = {};
   V.world = () => {
-    const w = W(); const segs = segHtml('world', [['intel', 'Brief'], ['monitor', 'Monitor'], ['feed', 'Events'], ['global', 'Global'], ['calendar', 'Calendar'], ['wnews', 'News']]);
+    const w = W(); const segs = segHtml('world', [['intel', 'Brief'], ['monitor', 'Monitor'], ['feed', 'Events'], ['global', 'Global'], ['calendar', 'Calendar'], ['wnews', 'News'], ['tv', 'Live TV'], ['weather', 'Weather']]);
+    if (sub.world === 'tv') return segs + (window.Chi ? Chi.tv(D, XU()) : '');
+    if (sub.world === 'weather') return segs + (window.Chi ? Chi.weather(D, XU()) : '');
     if (!w) return segs + P(empty('World Monitor is offline on the box (live-markets :8620). start.sh restarts it.'));
     return segs + (W_[sub.world] || W_.monitor)(w);
   };
@@ -428,7 +433,7 @@
   /* ── data loop ── */
   async function poll() {
     clearTimeout(pollT); if (!Feed.unlocked) return;
-    try { const d = await Feed.refresh(); if (d) { D = d; if (!(section === 'sports' && Live.sports[sub.sports])) render({ keepScroll: true, quiet: true }); else tape(); } }
+    try { const d = await Feed.refresh(); if (d) { D = d; if (window.Chi) Chi.watchPrices(D, toast); if (!(section === 'sports' && Live.sports[sub.sports])) render({ keepScroll: true, quiet: true }); else tape(); } }
     catch (e) { if (e.code === 'REKEY') { lock('This login key is no longer valid.'); return; } freshness(true); }
     pollT = setTimeout(poll, POLL_MS);
   }
@@ -446,7 +451,7 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden && Feed.unlocked && Date.now() - lastAct >= IDLE_MS) lock('Locked after 10 minutes idle.'); });
 
   function lock(msg) {
-    Feed.lock(); Live.stop(); unsub && unsub(); clearTimeout(pollT); D = null;
+    Feed.lock(); if (window.Play) Play.lock(); Live.stop(); unsub && unsub(); clearTimeout(pollT); D = null;
     $('#view').innerHTML = ''; $('#tape').innerHTML = ''; $('#tape').dataset.h = ''; for (const k in prevScore) delete prevScore[k];
     const app = $('#app'); app.classList.add('hidden'); app.classList.remove('reveal'); app.setAttribute('aria-hidden', 'true');
     const g = $('#gate'); g.classList.remove('hidden', 'leaving', 'working', 'bad');
@@ -463,6 +468,8 @@
     if (btn) btn.disabled = true; g.classList.add('working'); g.classList.remove('bad'); gateMsg('Opening sealed feed…'); H('light');
     try {
       const d = await Feed.unlock(login);
+      if (window.Play) await Play.boot(login);
+      if (window.Teach) setTimeout(() => Teach.open(), 700);
       const pass = $('#pass'); if (pass) pass.value = '';
       D = d; lastAct = Date.now(); H('success'); gateMsg('');
       g.classList.add('leaving'); const app = $('#app'); app.classList.remove('hidden'); app.classList.add('reveal');
@@ -487,9 +494,15 @@
   $('#unlock').addEventListener('submit', (e) => { e.preventDefault(); unlock($('#pass').value); });
   $('#peek').addEventListener('click', () => { const i = $('#pass'); const on = i.type === 'password'; i.type = on ? 'text' : 'password'; $('#peek').classList.toggle('on', on); H('light'); });
   $('#lock').addEventListener('click', () => lock('Locked.'));
+  const lb=$('#langbtn'); if(lb) lb.addEventListener('click', () => { if(window.Chi){ Chi.toggleLang(); toast(Chi.t('lang')==='English'?'Hindi':'English'); render({keepScroll:true,quiet:true}); }});
+  const ab=$('#alertbtn'); if(ab) ab.addEventListener('click', () => { if(window.Chi) Chi.enableAlerts(toast); });
   $('#fresh').addEventListener('click', () => { H('light'); toast('Refreshing…'); poll(); });
   $('#dock').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) go(b.dataset.go); });
   $('#view').addEventListener('click', (e) => {
+    const tv = e.target.closest('[data-tv]');
+    if (tv) { e.preventDefault(); const st=$('#tv-stage'); if(st){ st.classList.remove('hidden'); st.innerHTML='<iframe src="'+tv.dataset.tv+'" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" title="'+ (tv.dataset.title||'Live') +'"></iframe>'; } return; }
+    const pact = e.target.closest('[data-play]');
+    if (pact && window.Play) { e.preventDefault(); Play.handle(pact.dataset.play, D, toast); render({keepScroll:true,quiet:true}); return; }
     const s = e.target.closest('[data-sub]'); if (s) { const key = s.closest('[data-seg]').dataset.seg; if (sub[key] !== s.dataset.sub) { sub[key] = s.dataset.sub; H('light');
       if (key === 'sports') { if (Live.LABEL[s.dataset.sub]) Live.watch(s.dataset.sub); else Live.unwatch(); } render({ keepScroll: !['sports', 'pulse', 'world'].includes(key) }); } return; }
     const j = e.target.closest('[data-jump]'); if (j) { e.preventDefault(); const [a, b] = j.dataset.jump.split(':'); go(a, b); return; }

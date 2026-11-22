@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: https://a.espncdn.com; manifest-src 'self'; worker-src 'self'; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://site.api.espn.com https://site.web.api.espn.com https://data-api.binance.vision https://fapi.binance.com wss://data-stream.binance.vision; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: https://a.espncdn.com https://i.ytimg.com; manifest-src 'self'; worker-src 'self'; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://site.api.espn.com https://site.web.api.espn.com https://data-api.binance.vision https://fapi.binance.com wss://data-stream.binance.vision; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'self' https://www.youtube-nocookie.com">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
 <meta name="googlebot" content="noindex,nofollow">
@@ -44,6 +44,8 @@
     <div class="mark">SOBOT<i></i></div>
     <span class="clock num" id="clock"></span>
     <button id="fresh" class="fresh" type="button" aria-label="Data freshness"><i></i><span>—</span></button>
+    <button id="langbtn" class="langbtn" type="button" aria-label="Language">अ/A</button>
+    <button id="alertbtn" class="alertbtn" type="button" aria-label="Price alerts">Alerts</button>
     <button id="lock" class="lockbtn" type="button" aria-label="Lock now">
       <svg viewBox="0 0 36 36" class="idle-ring"><circle cx="18" cy="18" r="16"/></svg>
       <svg viewBox="0 0 24 24" class="ico"><path d="M7 11V8a5 5 0 0 1 10 0v3"/><rect x="5" y="11" width="14" height="10" rx="2"/></svg>
@@ -56,6 +58,7 @@
     <button data-go="home"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20H4z"/><path d="M10 20v-5h4v5"/></svg><span>Home</span></button>
     <button data-go="pulse"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 4-7 5 5"/><path d="M3 21h18"/></svg><span>Markets</span></button>
     <button data-go="world"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.8 3.9 5.8 3.9 9s-1.3 6.2-3.9 9c-2.6-2.8-3.9-5.8-3.9-9S9.4 5.8 12 3z"/></svg><span>World</span></button>
+    <button data-go="play"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 8l8 4-8 4z"/></svg><span data-i18n="play">Play</span></button>
     <button data-go="sports"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 4.8h-5L8 10z"/><path d="M12 3v4M21 10.5l-5-.5M18 19l-3.5-4.2M6 19l3.5-4.2M3 10.5l5-.5"/></svg><span>Sports</span></button>
   </nav>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -65,6 +68,9 @@
 <script src="feed.js"></script>
 <script src="world.js"></script>
 <script src="live.js"></script>
+<script src="chi.js"></script>
+<script src="play.js"></script>
+<script src="teach.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
