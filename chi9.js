@@ -138,8 +138,9 @@
     const rows = (arr) => (arr || []).map(r => `<tr><td class="l">${u.esc(r.s || '')} <button type="button" class="linkish" data-chi9="watch:${u.esc(r.s || '')}">+ watch</button></td><td class="r">${u.nf(r.ltp, 2)}</td><td class="r ${u.cls(r.cp)}">${u.pct(r.cp)}</td><td class="r">${u.esc(r.vol || r.rule || '')}</td></tr>`);
     const blocks = labs.map(([k, lab]) => {
       const arr = S[k] || [];
+      if (!arr.length) return '';
       return `${u.head(lab, arr.length + ' names')}
-        ${u.P(u.T(['Symbol', ['Last', 'r'], ['Chg', 'r'], ['Vol / rule', 'r']], rows(arr), 'No rows in this preset today'))}`;
+        ${u.P(u.T(['Symbol', ['Last', 'r'], ['Chg', 'r'], ['Vol / rule', 'r']], rows(arr), ''))}`;
     }).join('');
     return `<p class="lead">Presets from the delayed NSE movers tape and the desk breakout list. Not a recommendation.</p>${blocks}${u.src((chi(D).screener || {}).src || '')}`;
   }
@@ -153,10 +154,8 @@
     const up = (I.upcoming || []).map(r => `<tr><td class="l">${u.esc(r.companyName || r.name || r.symbol || JSON.stringify(r).slice(0, 80))}</td></tr>`).join('');
     return `${u.head('Live / current IPO', 'official NSE subscription')}
       ${u.P(u.T(['Issue', ['Price', 'r'], ['Subscribed', 'r'], ['Status', 'r']], cur, 'No current IPO in this pull'))}
-      ${u.head('Upcoming', 'official NSE list')}
-      ${u.P(up ? `<table class="t"><tbody>${up}</tbody></table>` : '<p class="lead">No upcoming IPO print in this pull.</p>')}
-      ${u.head('GMP / listing results', '')}
-      ${u.P(`<p class="lead">Grey-market premium is not an official NSE field, so it is not shown. Listing-day results will appear here when the official feed carries them.</p>`)}
+      ${up ? u.head('Upcoming', 'official NSE list') + u.P(`<table class="t"><tbody>${up}</tbody></table>`) : ''}
+      ${u.P(`<p class="lead">Grey-market premium is not an official NSE field, so it is not shown. Listing-day results appear when the official feed carries them.</p>`)}
       ${u.src(I.src || '')}`;
   }
 
@@ -259,9 +258,7 @@
     const fund = (C.funding || []).map(r => `<tr><td class="l">${u.esc(r.s)}</td><td class="r ${u.cls(r.rate)}">${r.rate == null ? '—' : u.pct(r.rate)}</td><td class="r">${u.nf(r.mark, 2)}</td></tr>`);
     return `${u.head('Crypto corner · INR', 'CoinDCX / WazirX public tickers')}
       ${u.P(u.T(['Coin', ['INR last', 'r'], ['24h', 'r'], ['Volume', 'r']], rows, 'No INR tickers in this pull'))}
-      ${u.head('Funding', 'Binance public premium index when reachable')}
-      ${u.P(fund ? u.T(['Coin', ['Funding %', 'r'], ['Mark', 'r']], fund, '') : `<p class="lead">${u.esc(C.liq || 'Funding was not reachable from the box in this pull.')}</p>`)}
-      ${u.P(`<p class="lead">${u.esc(C.liq || '')}</p>`)}
+      ${fund.length ? u.head('Funding', 'Binance public premium index') + u.P(u.T(['Coin', ['Funding %', 'r'], ['Mark', 'r']], fund, '')) : ''}
       ${u.src(C.src || '')}`;
   }
 
@@ -269,7 +266,7 @@
     const S = chi(D).social || {};
     const items = (S.items || []).map(it => `<a class="li" href="${u.esc(it.link || '#')}" target="_blank" rel="noopener noreferrer"><div class="t"><b>${u.esc(it.title || '')}</b><div class="mu">${u.esc(it.source || '')}${it.kind ? ' · ' + u.esc(it.kind) : ''}</div></div></a>`).join('');
     return `${u.head('Social buzz', 'free public sources')}
-      ${u.P(items || '<p class="lead">No public buzz items in this pull.</p>')}
+      ${items ? u.P(items) : ''}
       ${u.src(S.src || '')}`;
   }
 
