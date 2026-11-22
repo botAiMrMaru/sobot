@@ -4,7 +4,7 @@
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const TCFG = window.SOBOT_CFG || {}; const IDLE_MS = TCFG.idleMsTest || 10 * 60 * 1000, POLL_MS = TCFG.pollMsTest || 75 * 1000;
   let D = null, section = 'home', pollT = null, unsub = null, lastAct = Date.now();
-  const sub = { pulse: 'overview', world: 'intel', sports: 'home', fno: 'NIFTY', mov: 'NIFTY', std: 'nba', feed: 'all', news: 'all', wnews: 'all' };
+  const sub = { pulse: 'overview', world: 'intel', sports: 'home', tools: 'desk', play: 'games', fno: 'NIFTY', mov: 'NIFTY', std: 'nba', feed: 'all', news: 'all', wnews: 'all' };
   const prevScore = {};
   const NATIVE = window.SobotNative || null;
   const H = (k = 'light') => { try { if (NATIVE && NATIVE.haptic) return NATIVE.haptic(k); if (navigator.vibrate) navigator.vibrate({ light: 6, medium: 12, heavy: 22, success: [8, 30, 10], error: [24, 40, 24] }[k] || 6); } catch (e) {} };
@@ -45,7 +45,7 @@
   const segHtml = (key, items, small) => `<div class="seg ${small ? 's2' : ''}" data-seg="${key}"><i class="seg-pill"></i>${items.map(([k, t, b]) => `<button data-sub="${k}" class="${sub[key] === k ? 'on' : ''}">${esc(t)}${b ? `<span class="badge">${b}</span>` : ''}</button>`).join('')}</div>`;
 
   /* ── derived ── */
-  const XU = () => ({esc, nf, pct, cls, px, P, head, src, spark, T, ext, empty, ago, tag, inrS, sInrS});
+  const XU = () => ({esc, nf, pct, cls, px, P, head, src, spark, T, ext, empty, ago, tag, inrS, sInrS, segHtml, playTab: sub.play});
   const fx = () => (D && D.fx && D.fx.usdinr) || 84.5;
   const W = () => (D && D.world && !D.world.error) ? D.world : null;
   function quote(sym) { const w = W(); if (!w) return null; for (const g of Object.values(w.quotes || {})) for (const q of g) if (q.s === sym) return q; return null; }
@@ -149,7 +149,12 @@
   /* ── markets ── */
   const P_ = {};
   P_.commodities = () => MarketsX.commodities(D, {esc, nf, pct, cls, px, P, head, src, spark, T, ext, empty, ago, tag});
-  V.pulse = () => segHtml('pulse', [['overview', 'Overview'], ['fno', 'F&O'], ['flows', 'Flows'], ['breakouts', 'Breakouts'], ['crypto', 'Crypto'], ['commodities', 'Commodities'], ['insight', 'Sentiment'], ['news', 'News']]) + (P_[sub.pulse] || P_.overview)();
+  P_.screener = () => window.Chi9 ? Chi9.screener(D, XU()) : P(empty('Screener unavailable.'));
+  P_.ipo = () => window.Chi9 ? Chi9.ipo(D, XU()) : P(empty('IPO centre unavailable.'));
+  P_.deals = () => window.Chi9 ? Chi9.deals(D, XU()) : P(empty('Deals unavailable.'));
+  V.pulse = () => segHtml('pulse', [['overview', 'Overview'], ['fno', 'F&O'], ['flows', 'Flows'], ['breakouts', 'Breakouts'], ['screener', 'Screener'], ['ipo', 'IPO'], ['deals', 'Deals'], ['crypto', 'Crypto'], ['commodities', 'Commodities'], ['insight', 'Sentiment'], ['news', 'News']]) + (P_[sub.pulse] || P_.overview)();
+  V.tools = () => window.Chi9 ? Chi9.tools(D, XU(), sub.tools) : P(empty('Tools unavailable.'));
+
   P_.overview = () => {
     const M = D.markets || {}, w = W(); const ses = M.session || {}; const rc = M.recap || {};
     const ind = (w && w.quotes.india || []).filter(q => q.p != null);
@@ -411,8 +416,9 @@
     applyCss(main); imgs(main); placeSeg(main, false); V[section].after && V[section].after(main);
     if (opts.keepScroll) scrollTo(0, y); placeDock(); tape();
     if (section === 'pulse' && sub.pulse === 'crypto') Live.pullFutures();
+    if (window.Chi9) { Chi9.nudgeWidget(D); Chi9.checkWatch(D, toast); Chi9.settlePredict(D); }
   }
-  function go(s, sb) { if (sb) { if (s === 'pulse') sub.pulse = sb; if (s === 'world') sub.world = sb; if (s === 'sports') { sub.sports = sb; if (Live.LABEL[sb]) Live.watch(sb); } }
+  function go(s, sb) { if (sb) { if (s === 'pulse') sub.pulse = sb; if (s === 'world') sub.world = sb; if (s === 'tools') sub.tools = sb; if (s === 'play') sub.play = sb; if (s === 'sports') { sub.sports = sb; if (Live.LABEL[sb]) Live.watch(sb); } }
     if (section !== s || sb) { section = s; H('light'); scrollTo({ top: 0 }); render(); } }
   function placeDock() { const btns = $$('#dock button'); const i = btns.findIndex(b => b.dataset.go === section); btns.forEach((b, j) => b.classList.toggle('on', j === i)); const b = btns[i], pill = $('#pill'); if (!b) return;
     if (matchMedia('(min-width:1000px)').matches) { pill.style.removeProperty('width'); pill.style.setProperty('transform', `translateY(${b.offsetTop}px)`); }
@@ -469,6 +475,7 @@
     try {
       const d = await Feed.unlock(login);
       if (window.Play) await Play.boot(login);
+      if (window.Chi9) Chi9.boot();
       if (window.Teach) setTimeout(() => Teach.open(), 700);
       const pass = $('#pass'); if (pass) pass.value = '';
       D = d; lastAct = Date.now(); H('success'); gateMsg('');
@@ -501,10 +508,12 @@
   $('#view').addEventListener('click', (e) => {
     const tv = e.target.closest('[data-tv]');
     if (tv) { e.preventDefault(); const st=$('#tv-stage'); if(st){ st.classList.remove('hidden'); st.innerHTML='<iframe src="'+tv.dataset.tv+'" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" title="'+ (tv.dataset.title||'Live') +'"></iframe>'; } return; }
+    const c9 = e.target.closest('[data-chi9]');
+    if (c9 && window.Chi9) { e.preventDefault(); Chi9.handle(c9.dataset.chi9, D, toast, render); return; }
     const pact = e.target.closest('[data-play]');
     if (pact && window.Play) { e.preventDefault(); Play.handle(pact.dataset.play, D, toast); render({keepScroll:true,quiet:true}); return; }
     const s = e.target.closest('[data-sub]'); if (s) { const key = s.closest('[data-seg]').dataset.seg; if (sub[key] !== s.dataset.sub) { sub[key] = s.dataset.sub; H('light');
-      if (key === 'sports') { if (Live.LABEL[s.dataset.sub]) Live.watch(s.dataset.sub); else Live.unwatch(); } render({ keepScroll: !['sports', 'pulse', 'world'].includes(key) }); } return; }
+      if (key === 'sports') { if (Live.LABEL[s.dataset.sub]) Live.watch(s.dataset.sub); else Live.unwatch(); } render({ keepScroll: !['sports', 'pulse', 'world', 'tools', 'play'].includes(key) }); } return; }
     const j = e.target.closest('[data-jump]'); if (j) { e.preventDefault(); const [a, b] = j.dataset.jump.split(':'); go(a, b); return; }
     const sp = e.target.closest('[data-sport]'); if (sp && Live.LABEL[sp.dataset.sport]) { sub.sports = sp.dataset.sport; Live.watch(sp.dataset.sport); H('light'); render(); }
   });
