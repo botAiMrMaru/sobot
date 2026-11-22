@@ -135,7 +135,7 @@
       ['all_up', 'All gainers'], ['all_down', 'All losers'],
       ['breakouts', 'Breakouts']
     ];
-    const rows = (arr) => (arr || []).map(r => `<tr><td class="l">${u.esc(r.s || '')} <button type="button" class="linkish" data-chi9="watch:${u.esc(r.s || '')}">+ watch</button></td><td class="r">${u.nf(r.ltp, 2)}</td><td class="r ${u.cls(r.cp)}">${u.pct(r.cp)}</td><td class="r">${u.esc(r.vol || r.rule || '')}</td></tr>`).join('');
+    const rows = (arr) => (arr || []).map(r => `<tr><td class="l">${u.esc(r.s || '')} <button type="button" class="linkish" data-chi9="watch:${u.esc(r.s || '')}">+ watch</button></td><td class="r">${u.nf(r.ltp, 2)}</td><td class="r ${u.cls(r.cp)}">${u.pct(r.cp)}</td><td class="r">${u.esc(r.vol || r.rule || '')}</td></tr>`);
     const blocks = labs.map(([k, lab]) => {
       const arr = S[k] || [];
       return `${u.head(lab, arr.length + ' names')}
@@ -149,7 +149,7 @@
     const cur = (I.current || []).map(r => {
       const t = r.times == null ? '—' : (Number(r.times).toFixed(2) + '×');
       return `<tr><td class="l">${u.esc(r.name || r.sym || '')}<small>${u.esc(r.sym || '')} · ${u.esc(r.start || '')} – ${u.esc(r.end || '')}</small></td><td class="r">${u.esc(r.price || '—')}</td><td class="r">${t}</td><td class="r">${u.esc(r.status || '')}</td></tr>`;
-    }).join('');
+    });
     const up = (I.upcoming || []).map(r => `<tr><td class="l">${u.esc(r.companyName || r.name || r.symbol || JSON.stringify(r).slice(0, 80))}</td></tr>`).join('');
     return `${u.head('Live / current IPO', 'official NSE subscription')}
       ${u.P(u.T(['Issue', ['Price', 'r'], ['Subscribed', 'r'], ['Status', 'r']], cur, 'No current IPO in this pull'))}
@@ -202,7 +202,7 @@
         <td class="r ${u.cls(r.y1)}">${r.y1 == null ? '—' : u.pct(r.y1)}</td>
         <td class="r ${u.cls(r.y3)}">${r.y3 == null ? '—' : u.pct(r.y3)}</td>
         <td class="r ${u.cls(r.y5)}">${r.y5 == null ? '—' : u.pct(r.y5)}</td></tr>`;
-    }).join('');
+    });
     const opts = list.filter(f => f.nav).map(f => `<option value="${f.code}">${u.esc(f.name || f.code)}</option>`).join('');
     return `${u.head('Compare funds', 'direct-plan growth where available · past NAVs')}
       ${u.P(u.T(['Fund', ['1y', 'r'], ['3y', 'r'], ['5y', 'r']], rows, 'Fund NAVs unavailable'))}
@@ -225,7 +225,7 @@
       const val = (q.ltp && h.qty) ? q.ltp * h.qty : null;
       const pnl = (val != null && h.avg) ? val - h.avg * h.qty : null;
       return `<tr><td class="l">${u.esc(h.s)}</td><td class="r">${u.nf(h.qty, 2)}</td><td class="r">${u.nf(h.avg, 2)}</td><td class="r">${q.ltp == null ? '—' : u.nf(q.ltp, 2)}</td><td class="r ${u.cls(pnl)}">${pnl == null ? '—' : u.sInrS(pnl)}</td><td><button type="button" class="linkish" data-chi9="port-del:${i}">Remove</button></td></tr>`;
-    }).join('');
+    });
     return `${u.head('Portfolio', 'manual entry · stored only on this device')}
       ${u.P(`<p class="lead">Holdings never leave this device. There is no cloud copy and no broker link.</p>
         <div class="issue wrap">
@@ -234,7 +234,7 @@
           <input id="port-avg" type="number" step="0.01" min="0" placeholder="Avg price">
           <button type="button" class="act" data-chi9="port-add">Add</button>
         </div>
-        ${u.T(['Symbol', ['Qty', 'r'], ['Avg', 'r'], ['Last', 'r'], ['P&amp;L', 'r'], ''], rows, 'No holdings yet')}`)}`;
+        ${u.T(['Symbol', ['Qty', 'r'], ['Avg', 'r'], ['Last', 'r'], ['P&L', 'r'], ''], rows, 'No holdings yet')}`)}`;
   }
 
   function watchlist(D, u) {
@@ -242,7 +242,7 @@
     const rows = (d.watch || []).map((w, i) => {
       const q = pxOf(D, w.s) || {};
       return `<tr><td class="l">${u.esc(w.s)}</td><td class="r ${u.cls(q.cp)}">${q.ltp == null ? '—' : u.nf(q.ltp, 2)}</td><td class="r ${u.cls(q.cp)}">${q.cp == null ? '—' : u.pct(q.cp)}</td><td class="r">${u.esc(String(w.pct || 3))}%</td><td><button type="button" class="linkish" data-chi9="watch-del:${i}">Remove</button></td></tr>`;
-    }).join('');
+    });
     return `${u.head('Watchlist & alerts', 'on this device · delayed prints')}
       ${u.P(`<div class="issue wrap">
         <input id="watch-s" placeholder="Symbol" maxlength="24" autocapitalize="characters">
@@ -255,8 +255,8 @@
 
   function crypto(D, u) {
     const C = chi(D).crypto || {};
-    const rows = (C.inr || []).map(r => `<tr><td class="l">${u.esc(r.s)}<small>${u.esc(r.src || '')}</small></td><td class="r">${u.nf(r.px, r.px >= 100 ? 2 : 4)}</td><td class="r ${u.cls(r.cp)}">${r.cp == null ? '—' : u.pct(r.cp)}</td><td class="r">${u.nf(r.vol, 0)}</td></tr>`).join('');
-    const fund = (C.funding || []).map(r => `<tr><td class="l">${u.esc(r.s)}</td><td class="r ${u.cls(r.rate)}">${r.rate == null ? '—' : u.pct(r.rate)}</td><td class="r">${u.nf(r.mark, 2)}</td></tr>`).join('');
+    const rows = (C.inr || []).map(r => `<tr><td class="l">${u.esc(r.s)}<small>${u.esc(r.src || '')}</small></td><td class="r">${u.nf(r.px, r.px >= 100 ? 2 : 4)}</td><td class="r ${u.cls(r.cp)}">${r.cp == null ? '—' : u.pct(r.cp)}</td><td class="r">${u.nf(r.vol, 0)}</td></tr>`);
+    const fund = (C.funding || []).map(r => `<tr><td class="l">${u.esc(r.s)}</td><td class="r ${u.cls(r.rate)}">${r.rate == null ? '—' : u.pct(r.rate)}</td><td class="r">${u.nf(r.mark, 2)}</td></tr>`);
     return `${u.head('Crypto corner · INR', 'CoinDCX / WazirX public tickers')}
       ${u.P(u.T(['Coin', ['INR last', 'r'], ['24h', 'r'], ['Volume', 'r']], rows, 'No INR tickers in this pull'))}
       ${u.head('Funding', 'Binance public premium index when reachable')}
@@ -324,7 +324,7 @@
     const nif = I.Nifty || {};
     const day = today();
     const picked = st.day === day ? st.pick : '';
-    const board = (st.hist || []).map(h => `<tr><td>${u.esc(h.d)}</td><td>${u.esc(h.pick)}</td><td class="${u.cls(h.cp)}">${u.pct(h.cp)}</td><td>${h.win ? 'Hit' : 'Miss'}</td></tr>`).join('');
+    const board = (st.hist || []).map(h => `<tr><td>${u.esc(h.d)}</td><td>${u.esc(h.pick)}</td><td class="${u.cls(h.cp)}">${u.pct(h.cp)}</td><td>${h.win ? 'Hit' : 'Miss'}</td></tr>`);
     return `${u.head('Daily Nifty up / down', 'play money · one pick per IST day')}
       ${u.P(`<p class="lead">Last delayed Nifty: ${nif.ltp == null ? '—' : u.nf(nif.ltp, 2)} (${nif.change_pct == null ? '—' : u.pct(nif.change_pct)}). Pick before the close. A win adds 40 Sobo Coins. Coins cannot be cashed out.</p>
         <div class="kpis"><div class="kpi"><div class="lbl">Streak</div><div class="v">${u.nf(st.streak || 0, 0)}</div></div>
