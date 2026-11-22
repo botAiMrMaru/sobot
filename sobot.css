@@ -319,3 +319,10 @@ code{font:400 11px var(--mono);color:var(--gold2)}
 .xs .t{width:100%}.xs .t th:first-child,.xs .t td:first-child{position:sticky;left:0;z-index:1;background:var(--s1);box-shadow:1px 0 0 var(--line)}
 .xs .t td .spk{width:56px}
 .kpis .v small.fl{display:block;margin-top:4px;font:400 10.5px/1.2 var(--mono);color:var(--mu);white-space:normal}
+
+.news-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.news-row .nm{font:500 13px/1.4 var(--sans)}
+.news-row .meta{font:400 11px/1.4 var(--mono);color:var(--dim)}
+.rowk{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.rowk .nm{font:500 14px/1.2 var(--sans)}
+.rowk .meta{font:400 11px/1.4 var(--mono);color:var(--dim)}
