@@ -291,8 +291,9 @@
   V.play = () => window.Play ? Play.render(D, XU()) : P(empty('Play is unavailable.'));
   const W_ = {};
   V.world = () => {
-    const w = W(); const segs = segHtml('world', [['intel', 'Brief'], ['monitor', 'Monitor'], ['feed', 'Events'], ['global', 'Global'], ['calendar', 'Calendar'], ['wnews', 'News'], ['tv', 'Live TV'], ['weather', 'Weather']]);
+    const w = W(); const segs = segHtml('world', [['intel', 'Brief'], ['wnews', 'News'], ['war', 'War'], ['tv', 'Live'], ['monitor', 'Monitor'], ['feed', 'Events'], ['global', 'Global'], ['calendar', 'Calendar'], ['weather', 'Weather']]);
     if (sub.world === 'tv') return segs + (window.Chi ? Chi.tv(D, XU()) : '');
+    if (sub.world === 'war') return segs + (window.Chi ? (Chi.liveGrid(D, XU(), 'war', {title: 'Live war & world'}) || P('<p class="lead">No official live war or world stream is on right now. Dead streams are dropped.</p>')) : '');
     if (sub.world === 'weather') return segs + (window.Chi ? Chi.weather(D, XU()) : '');
     if (!w) return segs + P(empty('World Monitor is offline on the box (live-markets :8620). start.sh restarts it.'));
     return segs + (W_[sub.world] || W_.monitor)(w);
@@ -357,7 +358,8 @@
     return (out || P(empty('No upcoming events'))) + src('TradingView public economic calendar (IN, US, CN, EU, JP, GB) via World Monitor');
   };
   W_.wnews = (w) => { const items = w.news || []; const cats = [...new Set(items.map(i => i.cat).filter(Boolean))]; const f = sub.wnews === 'all' ? items : items.filter(i => i.cat === sub.wnews);
-    return `${segHtml('wnews', [['all', 'All']].concat(cats.map(c => [c, c])), true)}${P(newsList(f, 70))}${src('Reuters/AP via Google News, BBC, Al Jazeera, France 24, DW, UN, ET, Mint, BS, CoinDesk · World Monitor')}`; };
+    const grid = window.Chi ? Chi.liveGrid(D, XU(), 'news', {title: 'Live news'}) : '';
+    return `${grid}${segHtml('wnews', [['all', 'All']].concat(cats.map(c => [c, c])), true)}${P(newsList(f, 70))}${src('Official YouTube live, plus Reuters/AP via Google News, BBC, Al Jazeera, France 24, DW, UN, ET, Mint, BS, CoinDesk')}`; };
 
   /* ── sports ── */
   const sportData = (k) => Live.sports[k] || (D && D.sports && D.sports.sports && D.sports.sports[k]) || null;
@@ -376,7 +378,7 @@
   V.sports = () => {
     const ks = Live.SPORTS.filter(k => { const d = sportData(k); return d && (d.games || []).length; });
     const segs = segHtml('sports', [['home', 'Markets']].concat(ks.map(k => [k, Live.LABEL[k] || k, (sportData(k) || {}).live || ''])).concat([['standings', 'Standings']]));
-    if (sub.sports === 'home') return segs + S_.home();
+    if (sub.sports === 'home') return segs + (window.Chi ? Chi.liveGrid(D, XU(), 'sports', {title: 'Official live sports'}) : '') + S_.home();
     if (sub.sports === 'standings') return segs + S_.standings();
     const d = sportData(sub.sports); if (!d) return segs + P(empty('No games'));
     const gs = d.games || [];
@@ -417,6 +419,7 @@
     if (opts.keepScroll) scrollTo(0, y); placeDock(); tape();
     if (section === 'pulse' && sub.pulse === 'crypto') Live.pullFutures();
     if (window.Chi9) { Chi9.nudgeWidget(D); Chi9.checkWatch(D, toast); Chi9.settlePredict(D); }
+    if (window.Chi && Chi.afterLive) Chi.afterLive(main);
   }
   function go(s, sb) { if (sb) { if (s === 'pulse') sub.pulse = sb; if (s === 'world') sub.world = sb; if (s === 'tools') sub.tools = sb; if (s === 'play') sub.play = sb; if (s === 'sports') { sub.sports = sb; if (Live.LABEL[sb]) Live.watch(sb); } }
     if (section !== s || sb) { section = s; H('light'); scrollTo({ top: 0 }); render(); } }
