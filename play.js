@@ -209,7 +209,7 @@
       const p = (st.missions && st.missions.prog[m.id]) || 0;
       return `<div class="mission${got?' done':''}"><b>${esc(m.t)}</b><p class="hint">${got ? 'Collected' : p + ' / ' + m.n + ' · +' + m.coins + ' coins'}</p></div>`;
     }).join('');
-    const lb = leaders().slice(0, 8).map((r, i) => `<div class="row${r.you?' you':''}"><span class="rk">${i+1}</span><span>${esc(r.name)}</span><span style="margin-left:auto" class="gold">${nf(r.coins)}</span><span class="hint">Lv ${r.lv}</span></div>`).join('');
+    const lb = leaders().slice(0, 8).map((r, i) => `<div class="row${r.you?' you':''}"><span class="rk">${i+1}</span><span>${esc(r.name)}</span><span class="gold ml-auto">${nf(r.coins)}</span><span class="hint">Lv ${r.lv}</span></div>`).join('');
     return `<div class="lobby">${tiles}</div>
       ${headish('Daily missions', 'resets midnight IST')}
       <div class="missions">${ms}</div>
@@ -313,19 +313,19 @@
     const box = $('[data-table="blackjack"]'); if (!box) return;
     const g = st._bj;
     if (!g) {
-      box.innerHTML = `<div class="table-stage" style="padding:16px"><p class="lead">Dealer stands on 17. Blackjack pays 3:2. Double and split when the cards allow.</p>
+      box.innerHTML = `<div class="table-stage pad"><p class="lead">Dealer stands on 17. Blackjack pays 3:2. Double and split when the cards allow.</p>
         <div class="acts"><button type="button" data-play="bj:deal">Deal ${bet()}</button></div></div>`;
       return;
     }
     const splitBtn = (!g.done && g.p.length===2 && g.p[0].r===g.p[1].r && !g.split) ? `<button type="button" data-play="bj:split">Split</button>` : '';
     const dbl = (!g.done && g.p.length===2) ? `<button type="button" data-play="bj:double">Double</button>` : '';
-    box.innerHTML = `<div class="table-stage" style="padding:16px">
+    box.innerHTML = `<div class="table-stage pad">
       <div class="lbl">Dealer ${g.done?val(g.d):''}</div>
       <div class="cards">${g.d.map((c,i)=>cardEl(c, !g.done && i>0)).join('')}</div>
       <div class="lbl">You ${val(g.p)}</div>
       <div class="cards">${g.p.map((c)=>cardEl(c)).join('')}</div>
       ${g.splitHand ? `<div class="lbl">Split ${val(g.splitHand)}</div><div class="cards">${g.splitHand.map((c)=>cardEl(c)).join('')}</div>`:''}
-      <div class="bj-acts acts" style="display:flex;gap:8px;padding:10px 0">${g.done?'<button type="button" data-play="bj:deal">New hand</button>':`<button type="button" data-play="bj:hit">Hit</button><button type="button" data-play="bj:stand">Stand</button>${dbl}${splitBtn}`}</div>
+      <div class="bj-acts acts row-acts">${g.done?'<button type="button" data-play="bj:deal">New hand</button>':`<button type="button" data-play="bj:hit">Hit</button><button type="button" data-play="bj:stand">Stand</button>${dbl}${splitBtn}`}</div>
       <div class="result ${g.msg&&/win|Blackjack/i.test(g.msg)?'win':(g.msg&&/bust|Dealer/i.test(g.msg)?'lose':'')}">${esc(g.msg||'')}</div>
     </div>`;
   }
@@ -377,7 +377,7 @@
       return `<div class="reel${spinning?' blur':''}" data-reel="${i}"><div class="col">${strip}</div></div>`;
     }).join('');
     box.innerHTML = `<div class="table-stage"><div class="reels">${cols}</div>
-      <div class="acts" style="display:flex;justify-content:center;padding:0 0 16px"><button type="button" data-play="slots:spin" ${spinning?'disabled':''}>Spin ${bet()}</button></div>
+      <div class="acts row-acts center"><button type="button" data-play="slots:spin" ${spinning?'disabled':''}>Spin ${bet()}</button></div>
       <div class="result ${payout?'win':''}" data-slot-res>${payout ? ((kind||'Win') + ' · +' + payout) : (spinning ? 'Good luck…' : 'Three of a kind pays 8× · sevens pay 25×')}</div>
       <div class="confetti" data-confetti></div></div>`;
   }
@@ -435,7 +435,7 @@
     if (!tick || !$('canvas', box)) {
       box.innerHTML = `<div class="table-stage crash-wrap"><canvas width="390" height="220"></canvas>
         <div class="crash-mult${s.crashed?' boom':''}" data-cr-m>${s.crashed?'CRASH '+s.cap.toFixed(2)+'x':(s.flying?s.mult.toFixed(2)+'x':('Next in '+s.left+'s'))}</div>
-        <div class="acts" style="position:absolute;right:12px;bottom:12px;display:flex;gap:8px">
+        <div class="acts row-acts crash-acts">
           <button type="button" data-play="crash:bet">${st._cr && st._cr.in && !st._cr.out ? 'In' : 'Bet ' + bet()}</button>
           <button type="button" data-play="crash:out">Cash out</button>
         </div></div>
@@ -490,7 +490,7 @@
   function paintPlinko() {
     const box = $('[data-table="plinko"]'); if (!box) return;
     box.innerHTML = `<div class="table-stage plinko-wrap"><canvas width="390" height="280" data-plinko></canvas>
-      <div class="acts" style="display:flex;justify-content:center;padding:0 0 12px"><button type="button" data-play="plinko:drop">Drop ${bet()}</button></div>
+      <div class="acts row-acts center"><button type="button" data-play="plinko:drop">Drop ${bet()}</button></div>
       <div class="result" data-pk-res>16 rows · centre is safer, edges pay more.</div></div>`;
     drawPlinkoIdle($('canvas', box));
   }
@@ -542,7 +542,7 @@
     const box = $('[data-table="mines"]'); if (!box) return;
     const g = st._mn;
     if (!g) {
-      box.innerHTML = `<div class="table-stage" style="padding:16px"><p class="lead">5×5 board, three mines. Each gem lifts the cash-out. One mine ends the round.</p>
+      box.innerHTML = `<div class="table-stage pad"><p class="lead">5×5 board, three mines. Each gem lifts the cash-out. One mine ends the round.</p>
         <div class="acts"><button type="button" data-play="mines:start">Start ${bet()}</button></div></div>`;
       return;
     }
@@ -554,7 +554,7 @@
     }
     const mul = 1 + g.open.length * 0.35;
     box.innerHTML = `<div class="table-stage"><div class="mines">${cells.join('')}</div>
-      <div class="acts" style="display:flex;gap:8px;justify-content:center;padding:0 0 12px">
+      <div class="acts row-acts center">
         ${g.done?`<button type="button" data-play="mines:start">New board ${bet()}</button>`:`<button type="button" data-play="mines:out">Cash out ${mul.toFixed(2)}x</button>`}
       </div>
       <div class="result ${g.msg&&/cashed|win/i.test(g.msg)?'win':(g.msg&&/hit/i.test(g.msg)?'lose':'')}">${esc(g.msg||('Multiplier '+mul.toFixed(2)+'x'))}</div></div>`;
@@ -583,11 +583,11 @@
     const box=$('[data-table="dice"]'); if(!box) return;
     const tgt = target || (st._dice && st._dice.target) || 50;
     const isOver = over==null ? !!(st._dice && st._dice.over) : over;
-    box.innerHTML = `<div class="table-stage" style="padding:16px;text-align:center">
+    box.innerHTML = `<div class="table-stage pad tac">
       <div class="dice-face">${roll==null?'?':roll}</div>
       <p class="lead">Roll over or under a number. 1 and 100 are rare edges.</p>
       <label class="lead">Target <input id="dice-t" type="range" min="5" max="95" value="${tgt}"></label>
-      <div class="acts" style="display:flex;gap:8px;justify-content:center;padding:10px 0">
+      <div class="acts row-acts center">
         <button type="button" data-play="dice:under">Under</button>
         <button type="button" data-play="dice:over">Over</button>
       </div>
@@ -614,7 +614,7 @@
     const box=$('[data-table="board"]'); if(!box) return;
     const cells=BOARD.map((s,i)=>`<span class="sq${i===st.board?' on':''}">${esc(s)}${i===st.board?'<i class="token"></i>':''}</span>`).join('');
     box.innerHTML=`<div class="table-stage"><div class="mono">${cells}</div>
-      <div class="acts" style="display:flex;justify-content:center;padding:8px 0 12px"><button type="button" data-play="board:roll">Roll ${Math.min(15, bet()>0?15:15)}</button></div>
+      <div class="acts row-acts center"><button type="button" data-play="board:roll">Roll ${Math.min(15, bet()>0?15:15)}</button></div>
       <div class="result" data-bd-res>${esc(msg||'Roll to walk the token. Bonus and festival pay coins.')}</div></div>`;
   }
   function boardRoll() {

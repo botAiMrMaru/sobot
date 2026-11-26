@@ -208,7 +208,11 @@
     const news = liveGrid(D, u, 'news', { title: 'News' });
     const war = liveGrid(D, u, 'war', { title: 'World & war' });
     const sports = liveGrid(D, u, 'sports', { title: 'Sports' });
-    if (!news && !war && !sports) return u.P(`<p class="lead">${t('wait')}</p>`);
+    if (!news && !war && !sports) {
+      const asof = ((D && D.chi && D.chi.tv) || {}).ist || '';
+      if (asof) return u.P(`<p class="lead">No official YouTube live streams are on right now. Dead streams are dropped and checked every few minutes. Last check ${u.esc(asof)}.</p>`);
+      return u.P(`<p class="lead">${t('wait')}</p>`);
+    }
     return news + war + sports + u.src('Public official YouTube live channels only.');
   }
 
@@ -227,7 +231,8 @@
   function brief(D, u) {
     const b = (D && D.chi && D.chi.brief) || null;
     if (!b) return '';
-    return u.P(`<div class="h"><h2>${u.esc(t('brief'))}</h2><small>${u.esc(b.for || '')}</small></div>
+    const when = (u.asofLabel && (b.for || b.ist)) ? u.asofLabel(b.for || b.ist) : (b.for || b.ist || '');
+    return u.P(`<div class="h"><h2>${u.esc(t('brief'))}</h2><small>${u.esc(when)}</small></div>
       ${(b.lines || []).map(l => `<p class="lead">${u.esc(l)}</p>`).join('')}
       <span class="src">${u.esc(b.disclaimer || t('notTips'))}</span>`);
   }
@@ -244,7 +249,7 @@
       <div class="kpi"><div class="lbl">Max pain</div><div class="v gold">${u.nf(pain)}</div></div>
       <div class="kpi"><div class="lbl">ATM</div><div class="v">${u.nf(atm)}</div></div>
       <div class="kpi"><div class="lbl">Meter</div><div class="v ${cls} wrap">${u.esc(label.replace(' (high PCR)','').replace(' (low PCR)',''))}<small class="fl">${pcr >= 1.2 ? 'high PCR' : pcr <= 0.8 ? 'low PCR' : 'balanced'}</small></div></div></div>
-      <span class="bar ${cls}"><i style="width:${n}%"></i></span>
+      <span class="bar ${cls}"><i data-css="width:${n}%"></i></span>
       <span class="src">NSE option chain via the desk. A simple PCR reading, not a trading tip.</span>`);
   }
 

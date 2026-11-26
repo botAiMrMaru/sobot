@@ -87,3 +87,10 @@
 @media (prefers-reduced-motion:reduce){
   .play .feed-track,.play .roulette-wheel,.play .roulette-ball,.play .reel .col{animation:none!important;transition:none!important}
 }
+
+.play .ml-auto{margin-left:auto}
+.play .table-stage.pad{padding:16px}
+.play .table-stage.tac{text-align:center}
+.play .row-acts{display:flex;gap:8px;padding:10px 0}
+.play .row-acts.center{justify-content:center;padding:0 0 14px}
+.play .crash-acts{position:absolute;right:12px;bottom:12px;padding:0}

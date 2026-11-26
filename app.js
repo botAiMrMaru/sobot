@@ -31,18 +31,30 @@
   const applyCss = (root) => $$('[data-css]', root).forEach(el => { el.dataset.css.split('|').forEach(p => { const i = p.indexOf(':'); if (i > 0) el.style.setProperty(p.slice(0, i), p.slice(i + 1)); }); el.removeAttribute('data-css'); });
   const ext = (href, inner, c = '') => href ? `<a class="${c}" href="${esc(href)}" target="_blank" rel="noopener noreferrer nofollow">${inner}</a>` : `<div class="${c}">${inner}</div>`;
   const decodeEnt = (s) => String(s == null ? '' : s).replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&#x([0-9a-fA-F]+);/g,(_,h)=>String.fromCharCode(parseInt(h,16))).replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(+n));
+  const asofWhen = (raw) => {
+    if (raw == null || raw === '') return NaN;
+    if (typeof raw === 'number' || /^\d{10,13}$/.test(String(raw).trim())) {
+      const n = Number(raw); return n > 1e11 ? n : n * 1000;
+    }
+    let s = String(raw).trim().replace(/\s*IST\s*$/, '').replace(',', '');
+    if (!/\d{4}/.test(s)) {
+      const y = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric' });
+      s = s + ' ' + y;
+    }
+    if (!/GMT|UTC|[+-]\d{2}/.test(s)) s += ' GMT+0530';
+    return Date.parse(s);
+  };
   const asofLabel = (raw) => {
-    if (!raw) return '';
-    const t0 = Date.parse(String(raw).replace(' IST', '+05:30').replace(/(\d{4})-(\d{2})-(\d{2})$/, '$1-$2-$3T00:00:00+05:30'));
-    if (!isFinite(t0)) return String(raw);
+    const t0 = asofWhen(raw);
+    if (!isFinite(t0)) return raw ? String(raw) : '';
+    const pretty = (typeof raw === 'string' && /\d{4}/.test(raw)) ? String(raw) : (new Date(t0).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) + ' IST');
     const age = Date.now() - t0;
-    const pretty = String(raw);
-    if (age > 60 * 86400000) return pretty + ' · too old, hidden';
+    if (age > 60 * 86400000) return pretty + ' · too old';
     if (age > 7 * 86400000) return pretty + ' · delayed / stale';
     return pretty;
   };
   const isStale = (raw, days) => {
-    const t0 = Date.parse(String(raw || '').replace(' IST', '+05:30').replace(/(\d{4})-(\d{2})-(\d{2})$/, '$1-$2-$3T00:00:00+05:30'));
+    const t0 = asofWhen(raw);
     return isFinite(t0) && (Date.now() - t0) > (days || 60) * 86400000;
   };
   const empty = (t) => `<div class="empty"><i class="skel skel-line"></i><i class="skel skel-line short"></i><p>${esc(t)}</p></div>`;
@@ -112,7 +124,33 @@
   }
   const alertList = (al) => al.map(a => ext(a.href, `<i class="dot ${a.lvl}"></i><div class="t"><b>${esc(a.t)}</b><span>${esc(a.s || '')}</span></div>`, 'li' + (a.jump ? '" data-jump="' + a.jump : ''))).join('') || empty('All quiet');
 
-  const chiHome = () => (window.Chi ? (Chi.brief(D, XU()) + Chi.meter(D, XU())) : '');
+
+  const worldAsOf = (w) => {
+    if (w && w.at) return asofLabel(w.at);
+    return asofLabel((D && D.ist) || '');
+  };
+  function globalMarkets(w) {
+    if (!w || w.error || !w.quotes) return P(empty('World Monitor quotes are offline right now.')) + src('Yahoo delayed quotes via World Monitor');
+    const asof = worldAsOf(w) || 'delayed';
+    const tb = (title, g) => {
+      const rows = (w.quotes[g] || []).filter(q => q.p != null);
+      if (!rows.length) return head(title, asof) + P(empty('No delayed quotes in this pull.'));
+      return head(title, asof) + P(T([['Market', 'l'], 'Last', 'Chg', 'Day', ''], rows.map(q => `<tr><td class="n">${esc(q.n)}${q.d ? `<small>${q.d}m delay</small>` : ''}</td><td>${px(q.p)}</td><td class="${cls(q.cp)}">${pct(q.cp)}</td><td>${rng(q.l, q.h, q.p)}</td><td>${spark(q.sp)}</td></tr>`)));
+    };
+    return tb('Global indices', 'global') + tb('Futures · rates · FX', 'futures') + tb('Commodities', 'commod')
+      + src('Yahoo delayed quotes via World Monitor. Delays marked per row. Brent, WTI, gold, silver and nat gas sit here, not on the News tab. Not a live exchange tape.');
+  }
+  function heroZero() {
+    const I = D.intel || {}; const hz = I.hero_zero || {};
+    const asof = (D && D.ist) ? asofLabel(D.ist) : '';
+    return head('Hero-zero scan', hz.active ? ('EXPIRY DAY · ' + esc(hz.expiry || '') + (asof ? ' · ' + asof : '')) : ('next expiry ' + esc(hz.expiry || '—') + (asof ? ' · ' + asof : '')))
+      + P(`<div class="pp"><div class="legend"><span>Bias <b class="${hz.bias === 'up' ? 'up' : hz.bias === 'down' ? 'dn' : 'gold'}">${esc(hz.bias || '—')}</b></span><span>Spot ${nf(hz.spot, 2)}</span><span>Max pain ${nf(hz.max_pain)}</span></div></div>`
+        + T(['Strike', 'Side', 'LTP', 'Dist', 'OI', 'ΔOI'], (hz.cands || []).map(c => `<tr><td class="n">${nf(c.k)}</td><td class="${c.side === 'CE' ? 'up' : 'dn'}">${c.side}</td><td>${nf(c.ltp, 2)}</td><td class="mu">${sg(c.dist, 0)}</td><td>${nf((c.oi || 0) / 1000, 0)}k</td><td class="${cls(c.coi)}">${sg((c.coi || 0) / 1000, 1)}k</td></tr>`), hz.active ? 'No strike passes the rule' : 'This scan runs on expiry day only, using the official NSE option chain.')
+        + `<div class="note">${esc(hz.rule || 'A rule-based expiry-day scan, not a tip and not SEBI-regulated advice.')}</div>`)
+      + src('NSE option chain via the desk. Play-money and research only.');
+  }
+
+    const chiHome = () => (window.Chi ? (Chi.brief(D, XU()) + Chi.meter(D, XU())) : '');
   V.home = () => {
     const nq = quote('^NSEI') || quote('NIFTY') || {};
     const M = D.markets || {}, ses = M.session || {}, rc = M.recap || {};
@@ -133,7 +171,7 @@
     return `${chiHome()}` + `<div class="cols c3"><div>
       <section class="p hero" id="hero">
         <div class="row1"><div><div class="lbl">${esc(rc.headline ? 'Session' : 'Nifty 50')}</div><div class="big ${cls(chg)}">${nf(last, 2)}</div></div>${tag(ses.open ? 'Open' : 'Closed', ses.open ? 'u' : '')}</div>
-        <div class="sub"><span>Nifty <b class="${cls(chg)}">${pct(chg)}</b></span><span>${esc(rc.headline || rc.summary || 'Live markets')}</span></div>
+        <div class="sub"><span>Nifty <b class="${cls(chg)}">${pct(chg)}</b></span><span>${esc((ses.open && /closed/i.test(rc.headline || rc.summary || '')) ? 'Live session' : (rc.headline || rc.summary || 'Live markets'))}</span></div>
         <div class="chartw"><canvas id="hc"></canvas><div class="scrub" id="hcs"></div></div>
       </section>
       <div class="p"><div class="kpis">
@@ -169,13 +207,14 @@
   P_.screener = () => window.Chi9 ? Chi9.screener(D, XU()) : P(empty('Screener unavailable.'));
   P_.ipo = () => window.Chi9 ? Chi9.ipo(D, XU()) : P(empty('IPO centre unavailable.'));
   P_.deals = () => window.Chi9 ? Chi9.deals(D, XU()) : P(empty('Deals unavailable.'));
-  V.pulse = () => segHtml('pulse', [['overview', 'Overview'], ['fno', 'F&O'], ['flows', 'Flows'], ['breakouts', 'Breakouts'], ['screener', 'Screener'], ['ipo', 'IPO'], ['deals', 'Deals'], ['crypto', 'Crypto'], ['commodities', 'Commodities'], ['insight', 'Sentiment'], ['news', 'News'], ['funds', 'Funds'], ['desk', 'Portfolio'], ['social', 'Buzz'], ['theme', 'Theme']]) + (P_[sub.pulse] || P_.overview)();
+  V.pulse = () => segHtml('pulse', [['overview', 'Overview'], ['global', 'Global'], ['fno', 'F&O'], ['flows', 'Flows'], ['breakouts', 'Breakouts'], ['screener', 'Screener'], ['ipo', 'IPO'], ['deals', 'Deals'], ['crypto', 'Crypto'], ['commodities', 'Commodities'], ['insight', 'Sentiment'], ['news', 'News'], ['funds', 'Funds'], ['desk', 'Portfolio'], ['social', 'Buzz'], ['theme', 'Theme']]) + (P_[sub.pulse] || P_.overview)();
   V.tools = () => window.Chi9 ? Chi9.tools(D, XU(), sub.tools, {noSeg:true}) : P(empty('Tools unavailable.'));
   P_.funds = () => window.Chi9 ? Chi9.tools(D, XU(), 'funds', {noSeg:true}) : P(empty('Funds unavailable.'));
   P_.desk = () => window.Chi9 ? Chi9.tools(D, XU(), 'desk', {noSeg:true}) : P(empty('Portfolio unavailable.'));
   P_.social = () => window.Chi9 ? Chi9.tools(D, XU(), 'social', {noSeg:true}) : P(empty('Buzz unavailable.'));
   P_.theme = () => window.Chi9 ? Chi9.tools(D, XU(), 'theme', {noSeg:true}) : P(empty('Theme unavailable.'));
 
+  P_.global = () => globalMarkets(W());
   P_.overview = () => {
     const M = D.markets || {}, w = W(); const ses = M.session || {}; const rc = M.recap || {};
     const ind = (w && w.quotes.india || []).filter(q => q.p != null);
@@ -188,7 +227,7 @@
     const nq = quote('^NSEI');
     return `<div class="cols c3"><div>
       ${P(`<div class="pp"><div class="row1"><div><div class="lbl">Session</div><div data-css="margin-top:7px;font-size:14px;line-height:1.35">${esc(rc.headline || '—')}</div><div class="note bare" data-css="margin-top:4px">${esc(rc.summary || '')}</div></div>${tag(ses.open ? 'Open' : 'Closed', ses.open ? 'u' : '')}</div></div>`)}
-      ${head('Indices', w && w.nse_msg ? esc(w.nse_msg) : '')}
+      ${head('Indices', (w && w.nse_msg ? esc(w.nse_msg) : '') + ' · <a data-jump="pulse:global">global markets →</a>')}
       ${P(T([['Index', 'l'], 'Last', 'Chg', 'Day', '52W', ''], rows))}
       ${head('Breadth', esc(br.timestamp || ''))}
       ${P(`<div class="pp"><div class="legend"><span class="up">${nf(br.advances)} adv</span><span>${nf(br.unchanged)} unch</span><span class="dn">${nf(br.declines)} dec</span></div>
@@ -214,7 +253,7 @@
     const bu = (O.buildup || {})[sym] || [];
     let chain = ''; if (sym === 'NIFTY' && (ch.rows || []).length) { const atm = ch.atm; const rows = ch.rows.filter(r => Math.abs(r.strike - atm) <= 500); const mo = Math.max(1, ...rows.map(r => Math.max(r.ce_oi || 0, r.pe_oi || 0)));
       chain = head('Option chain', `NIFTY ${esc(ch.expiry || '')} · ATM ${nf(atm)}`) + P(T(['CE OI', 'ΔOI', 'LTP', ['Strike', ''], 'LTP', 'ΔOI', 'PE OI'], rows.map(r => `<tr class="${r.strike === atm ? 'hl' : ''}"><td>${bar((r.ce_oi || 0) / mo, 'd r')}</td><td class="${cls(r.ce_oi_chg)}">${sg(r.ce_oi_chg / 1000, 1)}k</td><td>${nf(r.ce_ltp, 2)}</td><td class="n${r.strike === ch.max_pain ? ' gold' : ''}" data-css="text-align:center">${nf(r.strike)}</td><td>${nf(r.pe_ltp, 2)}</td><td class="${cls(r.pe_oi_chg)}">${sg(r.pe_oi_chg / 1000, 1)}k</td><td>${bar((r.pe_oi || 0) / mo, 'u')}</td></tr>`))) + src('Max-pain strike in gold · ATM row marked · bars scaled to the largest OI in view'); }
-    return `${segHtml('fno', [['NIFTY', 'Nifty'], ['BANKNIFTY', 'Bank Nifty'], ['FINNIFTY', 'Fin Nifty']], true)}<div class="cols c3"><div>
+    return `${segHtml('fno', [['NIFTY', 'Nifty'], ['BANKNIFTY', 'Bank Nifty'], ['FINNIFTY', 'Fin Nifty']], true)}${heroZero()}<div class="cols c3"><div>
       ${P(`<div class="kpis">${kp('Spot', nf(s.u, 2))}${kp('ATM', nf(s.atm))}${kp('Max pain', nf(s.maxPain), 'gold')}${kp('PCR OI', ok(s.pcr) ? s.pcr.toFixed(2) : '—', s.pcr >= 1 ? 'up' : 'dn')}${kp('PCR ΔOI', ok(s.pcrChg) ? s.pcrChg.toFixed(2) : '—')}${kp('Straddle', nf(s.straddle, 1))}
         <div class="last-row">${kp('ATM IV', ok(s.atmIv) ? s.atmIv.toFixed(2) + '%' : '—')}</div><div class="last-row">${kp('CE OI', nf((t.ceOI || 0) / 1e5, 1) + 'L')}</div><div class="last-row">${kp('PE OI', nf((t.peOI || 0) / 1e5, 1) + 'L')}</div></div>`)}
       ${src(`${sym} · expiry ${s.expiry || '—'} · NSE ${s.ts || ''}`)}
@@ -301,7 +340,7 @@
       ${P(T([['Coin', 'l'], 'Rank', '24h'], (I.trending || []).map(t => `<tr><td class="n">${esc(t.s)}<small>${esc(t.n)}</small></td><td class="mu">${t.rank || '—'}</td><td class="${cls(t.chg)}">${pct(t.chg, 1)}</td></tr>`), 'Unavailable'))}
       ${src('alternative.me · CoinGecko · OKX · Deribit · Coinbase · mempool.space · DefiLlama. Liquidations are an OKX sample, not market-wide.' + ((I.failed || []).length ? ' Unavailable: ' + I.failed.join(', ') : ''))}`;
   };
-  const newsList = (items, n = 50) => items.slice(0, n).map(i => ext(i.link, `<i class="sev s${i.sev || (i.flags && i.flags.length ? 2 : 1)}"></i><div class="t"><b>${esc(i.title)}</b><span>${esc(i.source || '')} · ${ago(i.ts)}${i.place ? ' · ' + esc(i.place) : ''}</span></div>`, 'li')).join('') || empty('No headlines');
+  const newsList = (items, n = 50) => items.slice(0, n).map(i => ext(i.link, `<i class="sev s${i.sev || (i.flags && i.flags.length ? 2 : 1)}"></i><div class="t"><b>${esc(decodeEnt(i.title))}</b><span>${esc(i.source || '')} · ${ago(i.ts)}${i.place ? ' · ' + esc(i.place) : ''}</span></div>`, 'li')).join('') || empty('No headlines');
   P_.news = () => {
     const N = D.news || {}; const items = N.items || []; const cats = [...new Set(items.map(i => i.cat).filter(Boolean))];
     const f = sub.news === 'flagged' ? (N.flagged || []) : sub.news === 'all' ? items : items.filter(i => i.cat === sub.news);
@@ -313,7 +352,7 @@
   V.play.after = (root) => { if (window.Play && Play.after) Play.after(root, toast); };
   const W_ = {};
   V.world = () => {
-    const w = W(); const segs = segHtml('world', [['intel', 'Brief'], ['wnews', 'News'], ['war', 'War'], ['tv', 'Live'], ['monitor', 'Monitor'], ['feed', 'Events'], ['global', 'Global'], ['calendar', 'Calendar'], ['weather', 'Weather']]);
+    const w = W(); const segs = segHtml('world', [['intel', 'Brief'], ['wnews', 'News'], ['war', 'War'], ['tv', 'Live'], ['monitor', 'Monitor'], ['feed', 'Events'], ['calendar', 'Calendar'], ['weather', 'Weather']]);
     if (sub.world === 'tv') return segs + (window.Chi ? Chi.tv(D, XU()) : '');
     if (sub.world === 'war') return segs + (window.Chi ? (Chi.liveGrid(D, XU(), 'war', {title: 'Live war & world'}) || P('<p class="lead">No official live war or world stream is on right now. Dead streams are dropped.</p>')) : '');
     if (sub.world === 'weather') return segs + (window.Chi ? Chi.weather(D, XU()) : '');
@@ -361,18 +400,14 @@
     </div><div>
       ${head('Crypto overnight', (I.crypto_alerts || []).length + ' alerts')}
       ${P(al(I.crypto_alerts || []))}
-      ${head('Hero-zero scan', hz.active ? 'EXPIRY DAY · ' + esc(hz.expiry) : 'next expiry ' + esc(hz.expiry || '—'))}
-      ${P(`<div class="pp"><div class="legend"><span>Bias <b class="${hz.bias === 'up' ? 'up' : hz.bias === 'down' ? 'dn' : 'gold'}">${esc(hz.bias || '—')}</b></span><span>Spot ${nf(hz.spot, 2)}</span><span>Max pain ${nf(hz.max_pain)}</span></div></div>` + T(['Strike', 'Side', 'LTP', 'Dist', 'OI', 'ΔOI'], (hz.cands || []).map(c => `<tr><td class="n">${nf(c.k)}</td><td class="${c.side === 'CE' ? 'up' : 'dn'}">${c.side}</td><td>${nf(c.ltp, 2)}</td><td class="mu">${sg(c.dist, 0)}</td><td>${nf((c.oi || 0) / 1000, 0)}k</td><td class="${cls(c.coi)}">${sg((c.coi || 0) / 1000, 1)}k</td></tr>`), hz.active ? 'No strike passes the rule' : 'Runs on expiry day only') + `<div class="note">${esc(hz.rule || '')}</div>`)}
+      ${P(`<p class="lead">The Hero-zero options scan now lives under <a data-jump="pulse:fno">Markets → F&amp;O</a>.</p>`)}
     </div></div>`;
   };
   W_.feed = (w) => {
     const pins = (w.pins || []).slice().sort((a, b) => (b.ts || 0) - (a.ts || 0)); const f = sub.feed === 'high' ? pins.filter(p => p.sev >= 3) : sub.feed === 'elev' ? pins.filter(p => p.sev === 2) : pins;
     return `${segHtml('feed', [['all', 'All'], ['high', 'High', pins.filter(p => p.sev >= 3).length], ['elev', 'Elevated']], true)}${P(newsList(f, 80))}${src('Conflict & event feed: geo-tagged headlines from 18 wire/RSS feeds · World Monitor')}`;
   };
-  W_.global = (w) => {
-    const tb = (title, g) => head(title) + P(T([['Market', 'l'], 'Last', 'Chg', 'Day', ''], (w.quotes[g] || []).filter(q => q.p != null).map(q => `<tr><td class="n">${esc(q.n)}${q.d ? `<small>${q.d}m delay</small>` : ''}</td><td>${px(q.p)}</td><td class="${cls(q.cp)}">${pct(q.cp)}</td><td>${rng(q.l, q.h, q.p)}</td><td>${spark(q.sp)}</td></tr>`), 'No quotes'));
-    return `<div class="cols"><div>${tb('Global indices', 'global')}${tb('Commodities', 'commod')}</div><div>${tb('Futures · rates · FX', 'futures')}${src('Yahoo quote API via World Monitor; delays marked per row')}</div></div>`;
-  };
+  W_.global = (w) => P(`<p class="lead">Global indices, futures, rates, FX and commodities (Brent, WTI, gold, silver, nat gas) now live under <a data-jump="pulse:global">Markets → Global</a>.</p>`) + globalMarkets(w);
   W_.calendar = (w) => {
     const ev = (w.calendar || []).slice().sort((a, b) => a.t - b.t); const by = {}; ev.forEach(e => { const k = ist(e.t, { weekday: 'short', day: '2-digit', month: 'short' }); (by[k] = by[k] || []).push(e); });
     const imp = (i) => `<span class="${i >= 1 ? 'gold' : i === 0 ? 'tx2' : 'dim'}">${'●'.repeat(Math.max(1, (i || 0) + 2))}</span>`;
@@ -438,7 +473,8 @@
     if (!D) return; const main = $('#view'); const y = scrollY;
     main.innerHTML = `<div class="view">${V[section]()}</div>`; if (opts.quiet) main.firstChild.style.setProperty('animation', 'none');
     applyCss(main); imgs(main); placeSeg(main, false); V[section].after && V[section].after(main);
-    if (opts.keepScroll) scrollTo(0, y); placeDock(); tape();
+    if (opts.keepScroll) scrollTo(0, y); else { try { scrollTo(0, 0); main.scrollTop = 0; } catch (e) {} }
+    placeDock(); tape();
     if (section === 'pulse' && sub.pulse === 'crypto') Live.pullFutures();
     if (window.Chi9) { Chi9.nudgeWidget(D); Chi9.checkWatch(D, toast); Chi9.settlePredict(D); }
     if (window.Chi && Chi.afterLive) Chi.afterLive(main);
